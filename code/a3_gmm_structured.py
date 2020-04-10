@@ -89,7 +89,6 @@ def log_b_m_x(m, x, myTheta):
     term1 = (1 / 2) * (x ** 2) * (np.reciprocal(this_sigma))
     term2 = this_mu * x * (np.reciprocal(this_sigma))
     #Vectorized
-    #return np.sum(-0.5 * np.multiply(np.square(X), np.reciprocal(this_sigma)) + np.multiply(np.multiply(this_mu, X), np.reciprocal(this_sigma)), axis=1) + myTheta.precomputedForM(m)
     if len(x.shape) > 1:
         return - (np.sum(term1 - term2, axis=1)) + myTheta.precomputedForM(m)
     #Single Row
@@ -153,14 +152,6 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
             log_bs[m] = log_b_m_x(m, X, myTheta)
         log_ps = log_p_m_x(log_bs, myTheta)
         log_Lik = logLik(log_bs, myTheta)
-        
-        #Update parameters
-        # for m in range(M):
-        #     p_m = np.exp(log_ps[m])
-        #     sum_p_m = np.sum(p_m)
-        #     myTheta.omega[m] = sum_p_m / T
-        #     myTheta.mu[m] = np.dot(p_m, X) / sum_p_m
-        #     myTheta.Sigma[m] = (np.dot(p_m, np.square(X)) / sum_p_m ) - np.square(myTheta.mu[m])
             
         ps = np.exp(log_ps)
         summation_ps = np.sum(ps, axis=1)
@@ -214,17 +205,16 @@ def test(mfcc, correctID, models, k=5):
     
     if k > 0:
         f = open("gmmLiks.txt","w+")
-        f.write('{}'.format(models[correctID].name))
+        f.write('{}\n'.format(models[correctID].name))
         for j in range(k):
             modelID = sorted_models_likelihood[j][0]
             likelihood = sorted_models_likelihood[j][1]
-            f.write('{} {}'.format(models[modelID].name, likelihood))
+            f.write('{} {}\n'.format(models[modelID].name, likelihood))
         f.close()
     return 1 if (bestModel == correctID) else 0
 
 
 if __name__ == "__main__":
-    print(dataDir)
     trainThetas = []
     testMFCCs = []
     d = 13
