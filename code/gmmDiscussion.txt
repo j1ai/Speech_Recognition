@@ -1,1 +1,53 @@
+Experiment Results
+
+M: 8, MaxIter: 20, Accuracy: 1.0
+M: 6, MaxIter: 20, Accuracy: 0.9375
+M: 4, MaxIter: 20, Accuracy: 0.9688
+M: 2, MaxIter: 20, Accuracy: 0.9375
+
+Max: 8, MaxIter: 16, Accuracy: 1.0
+Max: 8, MaxIter: 12, Accuracy: 1.0
+Max: 8, MaxIter: 8, Accuracy:  0.9688
+Max: 8, MaxIter: 6, Accuracy:  1.0
+
+Max: 6, MaxIter: 12, Accuracy:  1.0
+Max: 4, MaxIter: 10, Accuracy:  0.9688
+Max: 4, MaxIter: 8, Accuracy:  0.8750
+Max: 2, MaxIter: 6, Accuracy:  0.9688
+
+Max: 8, MaxIter: 20, Speakers:24, Accuracy = 1.0
+Max: 8, MaxIter: 20, Speakers:16, Accuracy = 1.0
+Max: 8, MaxIter: 20, Speakers:8, Accuracy = 1.0
+
+Based on the above experiment results, the classification accuracy is decreasing as we decrease the settings of M.
+On the other hand, decreasing the value of MaxIter does not seem to affect the GMM performance. However, decreasing both 
+M and MaxIter at the same time is decreasing the classification accuracy significantly as seen in example (Max: 4, MaxIter: 8).
+Decreasing the number of speakers does not seem to have an effect on the GMM performance, as the classification accuracies remain
+the same for all cases. 
+
+• How might you improve the classification accuracy of the Gaussian mixtures, without adding more
+training data?
+
+Based on the above experiment results, the numbering of M seems to affect gmm performance without adding more training data. 
+By fine-tuning the M value, we will be able to improve the classification accuracy to train a model that better fit the data, as if M is too big or too small, 
+there are chances that the model might be overfitting or underfitting the data, which would decrease the overall classification accuracy.
+Secondly, we can also introduce more randomness to how we initialize the parameters in the training phase or adding some random noise to training data, 
+which might also help to improve classification accuracy.
+Lastly, we can also add some regularization such as L1 regularization in our training process to prevent the model to overfit the training data, 
+which will also help to improve the classification accuracy in validation and testing set. 
+
+
+• When would your classifier decide that a given test utterance comes from none of the trained speaker
+models, and how would your classifier come to this decision?
+
+When the likelihood of the test data given all models are equal to 0, my classifier would then decide that a given test utterance comes from none of the trained speaker. 
+My classifier would come to this decision when the values of the log likelihood approaches infinity, and this would happend when the observation probabilities are having the same probability, thus causes the bm values reach zero. 
+
+• Can you think of some alternative methods for doing speaker identification that don’t use Gaussian
+mixtures?
+
+We can use SVM to differentiate the frequency bands between different speakers.
+We can also train a RNN model using LSTM to classify different speakers.
+K-means Clustering can be used to partitions n observations into k clusters so as to 
+differentiate the speakers as well.  
 

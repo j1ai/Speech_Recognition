@@ -505,3 +505,4 @@ S-8D Kaldi 4 0.42526690391459077 S:502.0, I:5.0, D:60.0
 S-8D Google 5 0.5211267605633803 S:386.0, I:2.0, D:111.0
 S-8D Kaldi 5 0.40643863179074446 S:448.0, I:3.0, D:49.0
 Google Mean: 0.5605003399921608, Kaldi Mean: 0.4698964189934598, Google std: 0.10354066023754574, Kaldi std: 0.09618613821736875
+By looking into the transcript files, Google is ignoring most of the filler words such as um and mm, and speakers' emotion which have been captured in Kaldi like [laughter]. On ther other hand, Kaldi is much weaker at identifying shorter words which it couldn't recognize word like iPod whereas Google could.
