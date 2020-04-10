@@ -204,7 +204,7 @@ def test(mfcc, correctID, models, k=5):
     sorted_models_likelihood = sorted(models_likelihood.items() ,reverse=True, key=lambda x: x[1])
     
     if k > 0:
-        f = open("gmmLiks.txt","w+")
+        f = open("gmmLiks.txt","a")
         f.write('{}\n'.format(models[correctID].name))
         for j in range(k):
             modelID = sorted_models_likelihood[j][0]
@@ -219,33 +219,38 @@ if __name__ == "__main__":
     testMFCCs = []
     d = 13
     k = 5  # number of top speakers to display, <= 0 if none
-    M = 8
+    #M = 8
+    Mm = 8
     epsilon = 0.0
-    maxIter = 20
+    #maxIter = 20
+    maxIters = 20
     # train a model for each speaker, and reserve data for testing
+    #Experiemt
+    file = open("gmmDiscussion.txt","a")
+    for M in range(Mm):
+        for maxIter in range(0, maxIters, 2):
+            for subdir, dirs, files in os.walk(dataDir):
+                for speaker in dirs:
+                    print(speaker)
 
-    for subdir, dirs, files in os.walk(dataDir):
-        for speaker in dirs:
-            print(speaker)
+                    files = fnmatch.filter(os.listdir(os.path.join(dataDir, speaker)), "*npy")
+                    random.shuffle(files)
 
-            files = fnmatch.filter(os.listdir(os.path.join(dataDir, speaker)), "*npy")
-            random.shuffle(files)
+                    testMFCC = np.load(os.path.join(dataDir, speaker, files.pop()))
+                    testMFCCs.append(testMFCC)
 
-            testMFCC = np.load(os.path.join(dataDir, speaker, files.pop()))
-            testMFCCs.append(testMFCC)
+                    X = np.empty((0, d))
 
-            X = np.empty((0, d))
+                    for file in files:
+                        myMFCC = np.load(os.path.join(dataDir, speaker, file))
+                        X = np.append(X, myMFCC, axis=0)
 
-            for file in files:
-                myMFCC = np.load(os.path.join(dataDir, speaker, file))
-                X = np.append(X, myMFCC, axis=0)
+                    trainThetas.append(train(speaker, X, M, epsilon, maxIter))
 
-            trainThetas.append(train(speaker, X, M, epsilon, maxIter))
+            # evaluate
+            numCorrect = 0
 
-    # evaluate
-    numCorrect = 0
-
-    for i in range(0, len(testMFCCs)):
-        numCorrect += test(testMFCCs[i], i, trainThetas, k)
-    accuracy = 1.0 * numCorrect / len(testMFCCs)
-    print("Accuracy: {0: 1.4f} \n".format(accuracy))
+            for i in range(0, len(testMFCCs)):
+                numCorrect += test(testMFCCs[i], i, trainThetas, k)
+            accuracy = 1.0 * numCorrect / len(testMFCCs)
+            print("M: {}, maxIter: {}, Accuracy: {0: 1.4f} \n".format(M, maxIter, accuracy))
