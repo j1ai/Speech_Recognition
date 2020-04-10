@@ -4,8 +4,7 @@ import os, fnmatch
 import random
 
 dataDir = "/u/cs401/A3/data/"
-#dataDir = "C:\\Users\\LAI\\Desktop\\CSC401\\Speech_Recognition\\data"
-
+dataDir = "C:\\Users\\LAI\\Desktop\\CSC401\\Speech_Recognition\\data"
 
 class theta:
     def __init__(self, name, M=8, d=13):
@@ -19,7 +18,7 @@ class theta:
         self.omega = np.zeros((M, 1))
         self.mu = np.zeros((M, d))
         self.Sigma = np.zeros((M, d))
-
+        
     def precomputedForM(self, m):
         """Put the precomputedforM for given `m` computation here
         This is a function of `self.mu` and `self.Sigma` (see slide 32)
@@ -28,9 +27,9 @@ class theta:
         """
         this_mu = self.mu[m]
         this_sigma = self.Sigma[m]
-        pre_compute1 = np.sum((this_mu ** 2) / (2 * this_sigma))
+        pre_compute1 = np.sum((this_mu ** 2) / this_sigma / 2)
         pre_compute2 = (self._d / 2) * np.log(2 * np.pi)
-        pre_compute3 = (1 / 2) * np.log(np.prod(this_sigma))
+        pre_compute3 = 0.5 * np.log(np.prod(this_sigma))
         pre_computeM = -(pre_compute1 + pre_compute2 + pre_compute3)
         return pre_computeM
 
@@ -68,8 +67,7 @@ def stable_logsumexp(array_like, axis=-1):
     # keepdims should be True to allow for broadcasting
     m = np.max(array, axis=axis, keepdims=True)
     return m + np.log(np.sum(np.exp(array - m), axis=axis))
-
-
+        
 def log_b_m_x(m, x, myTheta):
     """ Returns the log probability of d-dimensional vector x using only
         component m of model myTheta (See equation 1 of the handout)
@@ -86,19 +84,17 @@ def log_b_m_x(m, x, myTheta):
     But we encourage you to use the vectorized version in your `train`
     function for faster/efficient computation.
     """
-    print(myTheta.preComputedForM(m))
     this_sigma = myTheta.Sigma[m]
     this_mu = myTheta.mu[m]
-    term1 = (1 / 2) * (x ** 2) * (np.reciprocal(this_sigma ** 2))
-    term2 = this_mu * x * (np.reciprocal(this_sigma ** 2))
+    term1 = (1 / 2) * (x ** 2) * (np.reciprocal(this_sigma))
+    term2 = this_mu * x * (np.reciprocal(this_sigma))
     #Vectorized
+    #return np.sum(-0.5 * np.multiply(np.square(X), np.reciprocal(this_sigma)) + np.multiply(np.multiply(this_mu, X), np.reciprocal(this_sigma)), axis=1) + myTheta.precomputedForM(m)
     if len(x.shape) > 1:
-        return - (np.sum(term1 - term2, axis=0)) + myTheta.preComputedForM(m)
+        return - (np.sum(term1 - term2, axis=1)) + myTheta.precomputedForM(m)
     #Single Row
     else:
-        return - (np.sum(term1 - term2)) + myTheta.preComputedForM(m)
-        
-
+        return - (np.sum(term1 - term2, axis=1)) + myTheta.precomputedForM(m)
 
 def log_p_m_x(log_Bs, myTheta):
     """ Returns the matrix of log probabilities i.e. log of p(m|X;theta)
@@ -113,8 +109,9 @@ def log_p_m_x(log_Bs, myTheta):
 
     NOTE: For a description of `log_Bs`, refer to the docstring of `logLik` below
     """
-    return (myTheta.omega.dot(log_Bs)) / (np.sum(myTheta.omega.dot(log_Bs), axis= 0))
-
+    log_omega = np.log(myTheta.omega)
+    log_omegaPlusbs = log_omega + log_Bs
+    return log_omega + log_Bs - stable_logsumexp(log_omegaPlusbs, axis=0)
 
 def logLik(log_Bs, myTheta):
     """ Return the log likelihood of 'X' using model 'myTheta' and precomputed MxT matrix, 'log_Bs', of log_b_m_x
@@ -137,7 +134,6 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
     """ Train a model for the given speaker. Returns the theta (omega, mu, sigma)"""
     myTheta = theta(speaker, M, X.shape[1])
     # perform initialization (Slide 32)
-    print("TODO : Initialization")
     T = X.shape[0]
     d = X.shape[1]
     i = 0
@@ -145,10 +141,10 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
     improvement = float('inf')
     # for ex.,
     myTheta.reset_omega(np.full((M,1), 1/M))
-    myTheta.reset_mu(X[random.sample(range(T), M)])
-    myTheta.reset_Sigma(np.full((M,d), 1))
+    random_indices = random.sample(range(T), M)
+    myTheta.reset_mu(X[random_indices])
+    myTheta.reset_Sigma(np.full((M,d), 1.0))
 
-    print("TODO: Rest of training")
     while i <= maxIter and improvement >= epsilon:
         
         #Compute Intermediate Results
@@ -159,18 +155,27 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
         log_Lik = logLik(log_bs, myTheta)
         
         #Update parameters
+        # for m in range(M):
+        #     p_m = np.exp(log_ps[m])
+        #     sum_p_m = np.sum(p_m)
+        #     myTheta.omega[m] = sum_p_m / T
+        #     myTheta.mu[m] = np.dot(p_m, X) / sum_p_m
+        #     myTheta.Sigma[m] = (np.dot(p_m, np.square(X)) / sum_p_m ) - np.square(myTheta.mu[m])
+            
+        ps = np.exp(log_ps)
+        summation_ps = np.sum(ps, axis=1)
+        ps_Dot_X = np.dot(ps, X)
+        ps_Dot_XSuare = np.dot(ps, np.square(X))
+        #Update parameters
         for m in range(M):
-            p_m = np.exp(log_ps[m])
-            sum_p_m = np.sum(p_m)
-            myTheta.omega[m] = sum_p_m / T
-            myTheta.mu[m] = np.dot(p_m, X) / sum_p_m
-            myTheta.Sigma[m] = (np.dot(p_m, np.square(X)) / sum_p_m ) - np.square(myTheta.mu[m])
+            myTheta.omega[m] = summation_ps[m] / T
+            myTheta.mu[m] = ps_Dot_X[m] / summation_ps[m]
+            myTheta.Sigma[m] = (ps_Dot_XSuare[m] / summation_ps[m] ) - np.square(myTheta.mu[m])
         
         improvement = log_Lik - prev_L
         prev_L = log_Lik
         i += 1
                 
-
     return myTheta
 
 
@@ -201,19 +206,20 @@ def test(mfcc, correctID, models, k=5):
         log_Lik = logLik(log_bs, cur_myTheta)
         models_likelihood[i] = log_Lik
         if (log_Lik > bestLikelihood):
-            bestLikelihood = logLik
+            bestLikelihood = log_Lik
             bestModel = i
         
     #Sorted by Best Likelihood in models_likelihood
     sorted_models_likelihood = sorted(models_likelihood.items() ,reverse=True, key=lambda x: x[1])
+    
     if k > 0:
-        print('{}'.format(models[correctID].name))
-        j = 0
-        for modelID, likelihood in sorted_models_likelihood.items():
-            if (j == k):
-                break
-            print('{} {}'.format(models[modelID].name, likelihood))
-            
+        f = open("gmmLiks.txt","w+")
+        f.write('{}'.format(models[correctID].name))
+        for j in range(k):
+            modelID = sorted_models_likelihood[j][0]
+            likelihood = sorted_models_likelihood[j][1]
+            f.write('{} {}'.format(models[modelID].name, likelihood))
+        f.close()
     return 1 if (bestModel == correctID) else 0
 
 
@@ -221,7 +227,6 @@ if __name__ == "__main__":
     print(dataDir)
     trainThetas = []
     testMFCCs = []
-    print("TODO: you will need to modify this main block for Sec 2.3")
     d = 13
     k = 5  # number of top speakers to display, <= 0 if none
     M = 8
@@ -253,3 +258,4 @@ if __name__ == "__main__":
     for i in range(0, len(testMFCCs)):
         numCorrect += test(testMFCCs[i], i, trainThetas, k)
     accuracy = 1.0 * numCorrect / len(testMFCCs)
+    print("Accuracy: {0: 1.4f} \n".format(accuracy))
