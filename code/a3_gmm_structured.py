@@ -4,7 +4,7 @@ import os, fnmatch
 import random
 
 dataDir = "/u/cs401/A3/data/"
-dataDir = "C:\\Users\\LAI\\Desktop\\CSC401\\Speech_Recognition\\data"
+#dataDir = "C:\\Users\\LAI\\Desktop\\CSC401\\Speech_Recognition\\data"
 
 
 class theta:
@@ -86,7 +86,7 @@ def log_b_m_x(m, x, myTheta):
     But we encourage you to use the vectorized version in your `train`
     function for faster/efficient computation.
     """
-    print(myTheta)
+    print(myTheta.preComputedForM(m))
     this_sigma = myTheta.Sigma[m]
     this_mu = myTheta.mu[m]
     term1 = (1 / 2) * (x ** 2) * (np.reciprocal(this_sigma ** 2))
