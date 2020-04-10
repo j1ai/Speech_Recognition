@@ -4,7 +4,7 @@ import os, fnmatch
 import random
 
 dataDir = "/u/cs401/A3/data/"
-dataDir = "C:\\Users\\LAI\\Desktop\\CSC401\\Speech_Recognition\\data"
+#dataDir = "C:\\Users\\LAI\\Desktop\\CSC401\\Speech_Recognition\\data"
 
 class theta:
     def __init__(self, name, M=8, d=13):
